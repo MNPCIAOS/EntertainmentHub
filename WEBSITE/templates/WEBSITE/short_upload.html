@@ -1,0 +1,5 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}{% if admin_upload %}Publish{% else %}Upload{% endif %} Short — EntertainmentHub{% endblock %}
+{% block content %}
+<div class="auth-wrap"><div class="auth-card short-upload-card"><p class="eyebrow" data-i18n="SHORTS">SHORTS</p><h1>{% if heading %}{{ heading }}{% elif admin_upload %}Publish promotional short{% else %}Upload a promotional short{% endif %}</h1><p data-i18n="Create a short advertisement for a new movie or series.">Create a short advertisement for a new movie or series.</p><form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}{% if not admin_upload %}<small data-i18n="Registered-user uploads are reviewed by the admin before publication.">Registered-user uploads are reviewed by the admin before publication.</small>{% endif %}<button class="btn primary" type="submit">{% if admin_upload %}Publish{% else %}Upload{% endif %}</button></form></div></div>
+{% endblock %}

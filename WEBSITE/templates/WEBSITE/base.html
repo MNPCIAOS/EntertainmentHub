@@ -1,0 +1,97 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d12">
+  <title>{% block title %}EntertainmentHub{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'WEBSITE/css/style.css' %}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav-wrap">
+    <a class="brand brand-main" href="{% url 'home' %}"><img class="site-logo" src="{% static 'WEBSITE/img/site-logo.png' %}" alt="EntertainmentHub logo"><span class="brand-name">EntertainmentHub</span></a>
+    <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" data-menu-button>☰</button>
+    <nav class="nav" data-menu>
+      <a href="{% url 'home' %}" data-i18n="Home">Home</a>
+      <a href="{% url 'home' %}?type=movie" data-i18n="Movies">Movies</a>
+      <a href="{% url 'home' %}?type=series" data-i18n="Series">Series</a>
+      <a href="{% url 'shorts' %}" data-i18n="Shorts">Shorts</a>
+      <div class="nav-genres">
+        <button class="nav-label genre-toggle" type="button" data-genre-button aria-expanded="false" data-i18n="Genres">Genres</button>
+        <div class="genre-menu" data-genre-menu>
+          {% for g in nav_genres %}<a href="{% url 'home' %}?genre={{ g.slug }}">{{ g.name }}</a>{% empty %}<span data-i18n="No genres yet">No genres yet</span>{% endfor %}
+        </div>
+      </div>
+      <div class="nav-genres">
+        <button class="nav-label genre-toggle" type="button" data-narrator-button aria-expanded="false" data-i18n="Abasobanuzi">Abasobanuzi</button>
+        <div class="genre-menu" data-narrator-menu>
+          {% for n in nav_narrators %}<a href="{% url 'home' %}?umusobanuzi={{ n.slug }}">{{ n.name }}</a>{% empty %}<span data-i18n="No Abasobanuzi yet">No Abasobanuzi yet</span>{% endfor %}
+        </div>
+      </div>
+      <form class="search" action="{% url 'home' %}" method="get">
+        <input name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search movies..." aria-label="Search" data-i18n-placeholder="Search movies...">
+        <button aria-label="Search">⌕</button>
+      </form>
+      <div class="account-links">
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}">{{ user.username }}</a>
+          {% if is_content_admin %}<a href="{% url 'dashboard' %}" data-i18n="Dashboard">Dashboard</a>{% endif %}
+          <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" data-i18n="Logout">Logout</button></form>
+        {% else %}
+          <a href="{% url 'login' %}" data-i18n="Login">Login</a>
+          <a class="btn small" href="{% url 'signup' %}" data-i18n="Create account">Create account</a>
+        {% endif %}
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="appearance-bar" aria-label="Appearance and language controls">
+  <div class="appearance-inner container">
+    <button type="button" class="appearance-btn" id="night-mode-toggle" aria-pressed="false">🌙 <span data-i18n="Night mode">Night mode</span></button>
+    <label class="appearance-select"><span data-i18n="Theme">Theme</span><select id="theme-picker" aria-label="Theme"></select></label>
+    <label class="appearance-select"><span data-i18n="Language">Language</span><select id="language-picker" aria-label="Language"><option value="en">English</option><option value="rw">Kinyarwanda</option><option value="fr">Français</option><option value="sw">Kiswahili</option><option value="es">Español</option></select></label>
+  </div>
+</div>
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand-col">
+      <div class="brand brand-footer"><img class="site-logo" src="{% static 'WEBSITE/img/site-logo.png' %}" alt="EntertainmentHub logo"><span>EntertainmentHub</span></div>
+      <p data-i18n="footer_description">Reba Agasobanuye aho waba uri hose kubuntu. Abasobanuzi, Rocky Kimomo, Junior Giti, Sankara, Savimbi, PK, Gaheza n'abandi.</p>
+    </div>
+    <div>
+      <h3 data-i18n="Quick Links">Quick Links</h3>
+      <a href="#" data-i18n="About Us">About Us</a>
+      <a href="#" data-i18n="Privacy Policy">Privacy Policy</a>
+      <a href="#" data-i18n="Terms & Conditions">Terms & Conditions</a>
+    </div>
+    <div>
+      <h3 data-i18n="Follow Us">Follow Us</h3>
+      <div class="social-links icon-socials">
+        <a href="mailto:info@oshakurfilms.com" aria-label="Email"><span class="social-icon email-icon">✉</span><span data-i18n="Email">Email</span></a>
+        <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><span class="social-icon tiktok-icon">♪</span><span>TikTok</span></a>
+        <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><span class="social-icon instagram-icon">◎</span><span>Instagram</span></a>
+        <a href="https://x.com/" target="_blank" rel="noopener noreferrer" aria-label="X"><span class="social-icon x-icon">𝕏</span><span>X</span></a>
+        <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><span class="social-icon youtube-icon">▶</span><span>YouTube</span></a>
+        <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><span class="social-icon linkedin-icon">in</span><span>LinkedIn</span></a>
+      </div>
+    </div>
+    <div>
+      <h3 data-i18n="Contact">Contact</h3>
+      <div class="contact-list">
+        <a href="tel:+250788821628">☎ <span>+250 788 821 628</span></a>
+        <a href="https://wa.me/250788821628" target="_blank" rel="noopener noreferrer">◔ <span>+250 788 821 628</span></a>
+        <a href="mailto:info@oshakurfilms.com">✉ <span>info@oshakurfilms.com</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="copyright">© {% now "Y" %} EntertainmentHub. <span data-i18n="All rights reserved.">All rights reserved.</span></div>
+</footer>
+<script src="{% static 'WEBSITE/js/app.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+{% extends 'WEBSITE/dashboard_base.html' %}
+{% block title %}Confirm deletion — FILMS{% endblock %}
+{% block dashboard_content %}<section class="dash-panel confirm-panel"><p class="eyebrow">CONFIRM ACTION</p><h1>Delete {{ kind }}?</h1><p>This will permanently delete <strong>{{ object }}</strong>.</p><form method="post">{% csrf_token %}<a class="dash-secondary" href="{% url cancel_url %}">Cancel</a><button class="danger-btn" type="submit">Delete permanently</button></form></section>{% endblock %}

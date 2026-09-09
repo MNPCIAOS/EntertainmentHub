@@ -1,0 +1,3 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}Account — FILMS{% endblock %}
+{% block content %}<div class="container page-space"><div class="auth-card"><p class="eyebrow">ACCOUNT</p><h1>{{ user.username }}</h1><p>{{ user.email|default:"No email added." }}</p>{% if is_content_admin %}<p class="admin-note">You are the configured content administrator.</p><a class="btn primary" href="{% url 'dashboard' %}">Open Dashboard</a>{% endif %}</div></div>{% endblock %}

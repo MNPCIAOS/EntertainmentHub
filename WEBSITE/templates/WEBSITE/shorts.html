@@ -1,0 +1,10 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}Shorts — EntertainmentHub{% endblock %}
+{% block content %}
+<div class="container page-space">
+  <div class="section-head"><div><p class="eyebrow" data-i18n="SHORTS">SHORTS</p><h1 data-i18n="Movie advertising shorts">Movie advertising shorts</h1><p data-i18n="Discover short promotional videos for new movies and series.">Discover short promotional videos for new movies and series.</p></div><a class="btn primary" href="{% url 'upload_short' %}" data-i18n="Upload a short">＋ Upload a short</a></div>
+  <div class="short-grid">
+    {% for short in shorts %}<article class="short-card"><a href="{% url 'short_watch' short.pk %}" class="short-media">{% if short.thumbnail_src %}<img src="{{ short.thumbnail_src }}" alt="{{ short.title }}" loading="lazy">{% else %}<video preload="metadata" muted src="{{ short.video_src }}"></video>{% endif %}<span class="short-play">▶</span></a><div class="card-body"><h3><a href="{% url 'short_watch' short.pk %}">{{ short.title }}</a></h3><p>{{ short.description|truncatechars:120 }}</p>{% if short.movie %}<small>For: <a href="{{ short.movie.get_absolute_url }}">{{ short.movie.title }}</a></small>{% endif %}</div></article>{% empty %}<div class="empty" data-i18n="No published shorts yet.">No published shorts yet.</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

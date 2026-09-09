@@ -1,0 +1,3 @@
+{% extends 'WEBSITE/dashboard_base.html' %}
+{% block title %}{{ heading }} — EntertainmentHub{% endblock %}
+{% block dashboard_content %}<div class="dash-heading"><div><p class="eyebrow">UMUSOBANUZI</p><h1>{{ heading }}</h1></div></div><form method="post" class="dash-form"><section class="dash-panel form-panel"><div class="field"><label>Name *</label>{{ form.name }}{{ form.name.errors }}</div></section><div class="form-actions"><a class="dash-secondary" href="{% url 'dashboard_narrators' %}">Cancel</a><button class="dash-primary" type="submit">{{ submit_text }}</button></div></form>{% endblock %}

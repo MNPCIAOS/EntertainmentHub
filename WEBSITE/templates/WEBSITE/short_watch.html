@@ -1,0 +1,10 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}{{ short.title }} — Shorts{% endblock %}
+{% block content %}
+<div class="container page-space short-watch-page">
+  <a href="{% url 'shorts' %}" class="back-link" data-i18n="Back to Shorts">← Back to Shorts</a>
+  <div class="short-player"><video controls playsinline preload="metadata" src="{{ short.video_src }}"></video></div>
+  <h1>{{ short.title }}</h1><p>{{ short.description }}</p>
+  {% if short.movie %}<p><span data-i18n="Promotes">Promotes</span>: <a href="{{ short.movie.get_absolute_url }}">{{ short.movie.title }}</a></p>{% endif %}
+</div>
+{% endblock %}

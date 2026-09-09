@@ -1,0 +1,3 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}Create Account — FILMS{% endblock %}
+{% block content %}<div class="auth-wrap"><div class="auth-card"><p class="eyebrow">ACCOUNT</p><h1>Create account</h1><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn primary" type="submit">Create account</button></form><p>Already have an account? <a href="{% url 'login' %}">Login</a>.</p></div></div>{% endblock %}
