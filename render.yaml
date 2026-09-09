@@ -2,19 +2,26 @@ services:
   - type: web
     name: entertainment-hub
     runtime: python
+    plan: free
     buildCommand: "pip install -r requirements.txt && bash build.sh"
     startCommand: "gunicorn FILMS.wsgi:application"
+
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
+
       - key: DJANGO_DEBUG
         value: "0"
+
       - key: DJANGO_ALLOWED_HOSTS
         value: "entertainment-hub.onrender.com"
+
       - key: CONTENT_ADMIN_USERNAME
         value: "admin"
+
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         value: "https://entertainment-hub.onrender.com"
+
       - key: DATABASE_URL
         fromDatabase:
           name: entertainment-hub-db
@@ -22,3 +29,4 @@ services:
 
 databases:
   - name: entertainment-hub-db
+    plan: free
