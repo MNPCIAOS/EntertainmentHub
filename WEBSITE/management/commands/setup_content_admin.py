@@ -38,26 +38,23 @@ class Command(BaseCommand):
         ))
 
     def get_password(self, username):
-        from getpass import getpass
+        import os
+        from django.contrib.auth.password_validation import validate_password
 
-        while True:
-            password = getpass("New admin password: ")
-            confirm = getpass("Confirm admin password: ")
-            if not password:
-                self.stderr.write("Password cannot be empty.")
-                continue
-            if password != confirm:
-                self.stderr.write("Passwords do not match. Try again.")
-                continue
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            temp = User(username=username)
-            # Validate through Django's configured password validators.
-            from django.contrib.auth.password_validation import validate_password
-            try:
-                validate_password(password, user=temp)
-            except Exception as exc:
-                for error in exc.error_list:
-                    self.stderr.write(f"Password error: {error.message}")
-                continue
-            return password
+        password = os.environ.get("CONTENT_ADMIN_PASSWORD", "").strip()
+
+        if not password:
+            raise CommandError(
+                "CONTENT_ADMIN_PASSWORD is not set."
+            )
+
+        User = get_user_model()
+        temp = User(username=username)
+
+        try:
+            validate_password(password, user=temp)
+        except Exception as exc:
+            for error in exc.error_list:
+                raise CommandError(f"Password error: {error.message}")
+
+        return password
