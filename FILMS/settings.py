@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +21,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -44,14 +44,33 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "FILMS.wsgi.application"
 
-# Use PostgreSQL in production when DATABASE_URL is provided (Render supplies this
-# when you connect a PostgreSQL database). Keep SQLite as the local-development
-# fallback so the project continues to work on your computer.
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# Production uses Supabase PostgreSQL through DATABASE_URL.
+# Local development keeps SQLite so the project remains easy to run without a
+# PostgreSQL installation. Render must have DATABASE_URL configured.
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+if not DEBUG and not DATABASE_URL:
+    raise ImproperlyConfigured(
+        "DATABASE_URL is required when DJANGO_DEBUG=0. "
+        "Set it to your Supabase PostgreSQL connection string."
+    )
+
 if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True, ssl_require=not DEBUG)}
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=not DEBUG,
+        )
+    }
 else:
-    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        conn_max_age=600,
+    )
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -67,7 +86,6 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -83,11 +101,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = None  # File validators enforce per-file limits.
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 if not DEBUG:
-    # Render terminates HTTPS at its proxy.
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip() for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()
-    ]
     SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "1") == "1"
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -97,5 +110,3 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = False
     X_FRAME_OPTIONS = "SAMEORIGIN"
-
-

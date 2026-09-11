@@ -69,25 +69,28 @@ The admin can publish promotional Shorts from the dashboard. Registered users ca
 - The **Watch now** action remains separate, so visitors can preview the trailer before opening the full movie.
 - Movie/series publishing remains restricted to the single configured content administrator. Run `py manage.py setup_content_admin` to create/repair that account and set its password.
 
+## Render + Supabase PostgreSQL
 
-## Render + PostgreSQL deployment
+Production is configured to use PostgreSQL from the `DATABASE_URL` environment variable. SQLite remains available only for local development when `DJANGO_DEBUG=1` and `DATABASE_URL` is not set.
 
-This project is configured to use PostgreSQL automatically when the `DATABASE_URL` environment variable is present. Without it, local development continues to use `db.sqlite3`.
+### Render environment variables
 
-### Render settings
+Set these environment variables on the Render Web Service before deploying:
 
-- Build command: `pip install -r requirements.txt && bash build.sh`
-- Start command: `gunicorn FILMS.wsgi:application`
-- Set `DJANGO_DEBUG=0`.
-- Set `DJANGO_SECRET_KEY` to a strong secret.
-- Set `DJANGO_ALLOWED_HOSTS` to your Render hostname.
-- Set `DJANGO_CSRF_TRUSTED_ORIGINS` to your HTTPS Render URL.
-- Connect a Render PostgreSQL database so Render provides `DATABASE_URL`.
+- `DJANGO_DEBUG=0`
+- `DJANGO_SECRET_KEY` = a long random secret (Render can generate this automatically when using `render.yaml`)
+- `DJANGO_ALLOWED_HOSTS=entertainmenthub-l0yx.onrender.com` (add any custom domain separated by commas)
+- `CONTENT_ADMIN_USERNAME=admin`
+- `DATABASE_URL` = the PostgreSQL connection string supplied by Supabase
 
-### Existing SQLite data
+### Supabase connection
 
-The repository still contains the local SQLite database for development. To move existing production data to PostgreSQL, export it with Django's `dumpdata`, run PostgreSQL migrations, and import the resulting JSON with `loaddata`.
+In Supabase, create a project and copy its PostgreSQL connection string. For a Render-hosted Django app, the Supabase connection string should be placed in Render as the `DATABASE_URL` secret; do not put the password into source code, `.env.example`, GitHub, or `render.yaml`.
 
-### Media files
+The included `build.sh` installs dependencies, collects static files, and runs all Django migrations automatically on every Render build.
 
-PostgreSQL stores database records, not uploaded movie/video files. Local `media/` files should be moved to durable object storage or another persistent storage solution before production use.
+### Important database behavior
+
+Do not use the production `db.sqlite3` as the Render database. Published movies, users, comments, likes and other database records are stored in Supabase PostgreSQL when `DATABASE_URL` is configured. This prevents records from disappearing when the Render web service restarts or redeploys.
+
+Uploaded files under `MEDIA_ROOT` are still stored on the Render filesystem and therefore are not permanent production storage. Use permanent external object storage for uploaded posters/videos if you need those files to survive Render restarts/redeploys. External movie/video URLs stored in PostgreSQL remain as database records, but the external provider itself must keep those URLs/files available.
