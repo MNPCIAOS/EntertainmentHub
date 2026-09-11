@@ -58,7 +58,7 @@ import os
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(
+    "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
     )
@@ -80,6 +80,10 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # The content-management account. Only this username can enter /dashboard/ or /admin/.
 CONTENT_ADMIN_USERNAME = os.environ.get("CONTENT_ADMIN_USERNAME", "admin")
