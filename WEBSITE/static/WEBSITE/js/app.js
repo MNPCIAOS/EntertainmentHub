@@ -145,6 +145,16 @@
   }
   buildThemePicker();
 
+  const filterToggle = document.querySelector('#filter-toggle');
+  const filterPanel = document.querySelector('#filter-panel');
+  if (filterToggle && filterPanel) {
+    filterPanel.hidden = true;
+    filterToggle.addEventListener('click', () => {
+      filterPanel.hidden = !filterPanel.hidden;
+      filterToggle.setAttribute('aria-pressed', String(!filterPanel.hidden));
+    });
+  }
+
   // ------------------------------------------------------------
   // Five-language visitor translation. This is intentionally client-side
   // so guests can change language without an account or a server session.

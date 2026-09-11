@@ -7,7 +7,7 @@
 <div class="container page-space">
   <section class="section-head"><div><p class="eyebrow" data-i18n="LIBRARY">LIBRARY</p><h2>{% if q %}Results for “{{ q }}”{% elif active_country %}Films from {{ active_country_name }}{% elif active_genre %}Filtered movies{% elif active_narrator %}Filtered by Umusobanuzi{% elif active_year %}Movies from {{ active_year }}{% elif active_type %}{{ active_type|title }}{% else %}Latest movies{% endif %}</h2></div></section>
 
-  <section class="filter-panel advanced-filter-panel">
+  <section class="filter-panel advanced-filter-panel" id="filter-panel">
     <div class="filter-heading">
       <div><p class="eyebrow" data-i18n="FILTERS">FILTERS</p><h3 data-i18n="Find a film">Find a film</h3><p data-i18n="Narrow the library by genre, Umusobanuzi, country, year and more.">Narrow the library by genre, Umusobanuzi, country, year and more.</p></div>
       <span class="filter-count">{{ page.paginator.count }} <span data-i18n="results">results</span></span>
