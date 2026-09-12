@@ -2,7 +2,20 @@
 {% block title %}EntertainmentHub — Home{% endblock %}
 {% block content %}
 {% if featured and not request.GET.q and not active_genre and not active_year and not active_narrator and not active_type and not active_country and not active_rating and not active_duration and not active_featured %}
-<section class="hero"><div class="hero-inner container"><div><p class="eyebrow" data-i18n="FEATURED">FEATURED</p><h1 data-i18n="Watch your favorites.">Watch your favorites.</h1><p class="hero-text" data-i18n="A responsive movie library built for every screen.">A responsive movie library built for every screen.</p><a class="btn primary" href="{% url 'movie_detail' featured.0.slug %}" data-i18n="Explore now">▶ Explore now</a></div></div></section>
+<section class="hero featured-hero">
+  <div class="hero-inner container">
+    <div class="hero-copy">
+      <p class="eyebrow" data-i18n="FEATURED">FEATURED</p>
+      <h1>{{ featured.0.title }}</h1>
+      <div class="hero-meta">{% if featured.0.release_year %}{{ featured.0.release_year }}{% endif %}{% if featured.0.rating %} · ★ {{ featured.0.rating }}{% endif %}{% if featured.0.content_type %} · {{ featured.0.get_content_type_display }}{% endif %}</div>
+      <p class="hero-text">{{ featured.0.description|truncatechars:240 }}</p>
+      <div class="hero-actions"><a class="btn primary" href="{% url 'movie_detail' featured.0.slug %}" data-i18n="Explore now">▶ Explore now</a>{% if featured.0.trailer_src %}<a class="btn secondary" href="{% url 'movie_detail' featured.0.slug %}">Trailer</a>{% endif %}</div>
+    </div>
+    <a class="hero-poster" href="{% url 'movie_detail' featured.0.slug %}" aria-label="{{ featured.0.title }}">
+      {% if featured.0.poster_src %}<img src="{{ featured.0.poster_src }}" data-poster-fallback="{{ featured.0.poster_fallback_src }}" alt="{{ featured.0.title }} poster" onerror="if(this.dataset.posterFallback && this.src !== this.dataset.posterFallback){this.src=this.dataset.posterFallback;}else{this.style.display='none';}">{% else %}<div class="poster-placeholder">{{ featured.0.title|first }}</div>{% endif %}
+    </a>
+  </div>
+</section>
 {% endif %}
 <div class="container page-space">
   <section class="section-head"><div><p class="eyebrow" data-i18n="LIBRARY">LIBRARY</p><h2>{% if q %}Results for “{{ q }}”{% elif active_country %}Films from {{ active_country_name }}{% elif active_genre %}Filtered movies{% elif active_narrator %}Filtered by Umusobanuzi{% elif active_year %}Movies from {{ active_year }}{% elif active_type %}{{ active_type|title }}{% else %}Latest movies{% endif %}</h2></div></section>
@@ -32,5 +45,27 @@
   {% for movie in page %}<article class="card"><a href="{{ movie.get_absolute_url }}" class="poster">{% if movie.poster_src %}<img src="{{ movie.poster_src }}" data-poster-fallback="{{ movie.poster_fallback_src }}" alt="{{ movie.title }} poster" loading="lazy" onerror="if(this.dataset.posterFallback && this.src !== this.dataset.posterFallback){this.src=this.dataset.posterFallback;}else{this.style.display='none';this.parentElement.classList.add('poster-failed');}">{% else %}<div class="poster-placeholder">{{ movie.title|first }}</div>{% endif %}<span class="type-badge">{{ movie.get_content_type_display }}</span></a><div class="card-body"><h3><a href="{{ movie.get_absolute_url }}">{{ movie.title }}</a></h3><div class="meta">{% if movie.release_year %}{{ movie.release_year }}{% endif %}{% if movie.rating %} · ★ {{ movie.rating }}{% endif %}</div><div class="card-genres">{% for g in movie.genres.all|slice:":2" %}<span>{{ g.name }}</span>{% endfor %}</div><div class="card-narrators">{% for n in movie.abasobanuzi.all|slice:":2" %}<span>{{ n.name }}</span>{% endfor %}</div><div class="card-countries">{% for c in movie.countries.all|slice:":2" %}<span>🌍 {{ c.name }}</span>{% endfor %}</div></div></article>{% empty %}<div class="empty" data-i18n="No movies found. Add movies from the admin dashboard.">No movies found. Add movies from the admin dashboard.</div>{% endfor %}
   </div>
   {% if page.paginator.num_pages > 1 %}<div class="pagination">{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}{% if filter_query %}&{{ filter_query }}{% endif %}">←</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?page={{ page.next_page_number }}{% if filter_query %}&{{ filter_query }}{% endif %}">→</a>{% endif %}</div>{% endif %}
+
+  {% if not request.GET.q and not active_genre and not active_year and not active_narrator and not active_type and not active_country and not active_rating and not active_duration and not active_featured %}
+    {% for section in genre_sections %}
+    <section class="genre-section">
+      <div class="section-head genre-section-head">
+        <div><p class="eyebrow" data-i18n="GENRE">GENRE</p><h2>{{ section.genre.name }}</h2></div>
+        <a class="view-more" href="{% url 'genre_detail' section.genre.slug %}">View More →</a>
+      </div>
+      <div class="movie-grid genre-row">
+        {% for movie in section.movies %}
+        <article class="card">
+          <a href="{{ movie.get_absolute_url }}" class="poster">
+            {% if movie.poster_src %}<img src="{{ movie.poster_src }}" data-poster-fallback="{{ movie.poster_fallback_src }}" alt="{{ movie.title }} poster" loading="lazy" onerror="if(this.dataset.posterFallback && this.src !== this.dataset.posterFallback){this.src=this.dataset.posterFallback;}else{this.style.display='none';this.parentElement.classList.add('poster-failed');}">{% else %}<div class="poster-placeholder">{{ movie.title|first }}</div>{% endif %}
+            <span class="type-badge">{{ movie.get_content_type_display }}</span>
+          </a>
+          <div class="card-body"><h3><a href="{{ movie.get_absolute_url }}">{{ movie.title }}</a></h3><div class="meta">{% if movie.release_year %}{{ movie.release_year }}{% endif %}{% if movie.rating %} · ★ {{ movie.rating }}{% endif %}</div></div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  {% endif %}
 </div>
 {% endblock %}

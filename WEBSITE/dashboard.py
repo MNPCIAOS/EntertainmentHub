@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import EpisodeForm, GenreForm, MovieForm
-from .models import Abasobanuzi, Country, Episode, Genre, Movie, MovieComment, Short
+from .models import Abasobanuzi, Country, Episode, Genre, Movie, MovieComment, Feedback
 
 
 def is_content_admin(user):
@@ -24,8 +24,7 @@ def dashboard(request):
         "episode_count": Episode.objects.count(),
         "comment_count": MovieComment.objects.count(),
         "narrator_count": Abasobanuzi.objects.count(),
-        "short_count": Short.objects.count(),
-        "pending_short_count": Short.objects.filter(status="pending").count(),
+        "feedback_count": Feedback.objects.count(),
         "recent_movies": Movie.objects.prefetch_related("genres", "abasobanuzi", "countries")[:8],
     }
     return render(request, "WEBSITE/dashboard.html", context)
@@ -204,61 +203,20 @@ def narrator_delete(request, pk):
     return render(request, "WEBSITE/dashboard_confirm.html", {"object": narrator, "kind": "umusobanuzi", "cancel_url": "dashboard_narrators"})
 
 
-@admin_required
-def short_list(request):
-    from .models import Short
-    shorts = Short.objects.select_related("uploaded_by", "movie").all()
-    return render(request, "WEBSITE/dashboard_shorts.html", {"shorts": shorts})
-
-
 
 @admin_required
-def short_create_admin(request):
-    from .forms import ShortForm
-    form = ShortForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
-        short = form.save(commit=False)
-        short.uploaded_by = request.user
-        short.status = "published"
-        short.save()
-        messages.success(request, f'Short “{short.title}” was published.')
-        return redirect("dashboard_shorts")
-    return render(request, "WEBSITE/short_upload.html", {"form": form, "admin_upload": True})
+def feedback_list(request):
+    feedback = Feedback.objects.all()
+    return render(request, "WEBSITE/dashboard_feedback.html", {"feedback": feedback})
 
 
 @admin_required
-def short_edit(request, pk):
-    from .forms import ShortForm
-    from .models import Short
-    short = get_object_or_404(Short, pk=pk)
-    form = ShortForm(request.POST or None, request.FILES or None, instance=short)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, f'Short “{short.title}” was updated.')
-        return redirect("dashboard_shorts")
-    return render(request, "WEBSITE/short_upload.html", {"form": form, "admin_upload": True, "short": short, "heading": f"Edit: {short.title}"})
-
-
-@admin_required
-def short_delete(request, pk):
-    from .models import Short
-    short = get_object_or_404(Short, pk=pk)
+def feedback_delete(request, pk):
+    item = get_object_or_404(Feedback, pk=pk)
     if request.method == "POST":
-        title = short.title
-        short.delete()
-        messages.success(request, f'Short “{title}” was deleted.')
-        return redirect("dashboard_shorts")
-    return render(request, "WEBSITE/dashboard_confirm.html", {"object": short, "kind": "short", "cancel_url": "dashboard_shorts"})
-
-
-@admin_required
-def short_status(request, pk, status):
-    from .models import Short
-    if status not in {"pending", "published", "rejected"} or request.method != "POST":
-        from django.http import HttpResponseBadRequest
-        return HttpResponseBadRequest("Invalid request.")
-    short = get_object_or_404(Short, pk=pk)
-    short.status = status
-    short.save(update_fields=["status", "updated_at"])
-    messages.success(request, f'Short “{short.title}” is now {short.get_status_display().lower()}.')
-    return redirect("dashboard_shorts")
+        item.delete()
+        messages.success(request, "Feedback deleted.")
+        return redirect("dashboard_feedback")
+    return render(request, "WEBSITE/dashboard_confirm.html", {
+        "object": item, "kind": "feedback", "cancel_url": "dashboard_feedback"
+    })

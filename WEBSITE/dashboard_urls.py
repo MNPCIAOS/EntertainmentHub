@@ -21,9 +21,6 @@ urlpatterns = [
     path('narrators/<int:pk>/delete/', dashboard.narrator_delete, name='dashboard_narrator_delete'),
     path('comments/', dashboard.comment_list, name='dashboard_comments'),
     path('comments/<int:pk>/delete/', dashboard.comment_delete, name='dashboard_comment_delete'),
-    path('shorts/', dashboard.short_list, name='dashboard_shorts'),
-    path('shorts/new/', dashboard.short_create_admin, name='dashboard_short_create'),
-    path('shorts/<int:pk>/edit/', dashboard.short_edit, name='dashboard_short_edit'),
-    path('shorts/<int:pk>/delete/', dashboard.short_delete, name='dashboard_short_delete'),
-    path('shorts/<int:pk>/<str:status>/', dashboard.short_status, name='dashboard_short_status'),
+    path('feedback/', dashboard.feedback_list, name='dashboard_feedback'),
+    path('feedback/<int:pk>/delete/', dashboard.feedback_delete, name='dashboard_feedback_delete'),
 ]

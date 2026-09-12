@@ -6,14 +6,14 @@ from django.contrib.auth.views import LoginView
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from .forms import SignupForm, CommentForm
+from .forms import SignupForm, CommentForm, FeedbackForm
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponseBadRequest, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import get_valid_filename
 
-from .models import Abasobanuzi, Country, Episode, Genre, Movie, MovieComment, MovieLike, Short
+from .models import Abasobanuzi, Country, Episode, Genre, Movie, MovieComment, MovieLike, Feedback
 
 
 def home(request):
@@ -82,6 +82,19 @@ def home(request):
     countries = Country.objects.all()
     selected_country = Country.objects.filter(slug=country_slug).first() if country_slug else None
     years = Movie.objects.filter(is_published=True, release_year__isnull=False).values_list("release_year", flat=True).distinct().order_by("-release_year")
+
+    # Keep the existing library/filter view, and additionally group the published
+    # library into genre rows for the homepage.
+    genre_sections = []
+    for genre in genres:
+        genre_movies = list(
+            Movie.objects.filter(
+                is_published=True, genres=genre
+            ).prefetch_related("genres", "abasobanuzi", "countries").order_by("-created_at")[:8]
+        )
+        if genre_movies:
+            genre_sections.append({"genre": genre, "movies": genre_movies})
+
     filter_params = request.GET.copy()
     filter_params.pop("page", None)
 
@@ -90,8 +103,23 @@ def home(request):
         "q": q, "active_genre": genre_slug, "active_year": year, "active_narrator": narrator_slug,
         "active_type": content_type, "active_country": country_slug, "active_country_name": selected_country.name if selected_country else "", "active_rating": min_rating,
         "active_duration": max_duration, "active_featured": featured_only, "active_sort": sort,
-        "filter_query": filter_params.urlencode(),
+        "filter_query": filter_params.urlencode(), "genre_sections": genre_sections,
     })
+
+
+def contact(request):
+    form = FeedbackForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        feedback = form.save(commit=False)
+        if request.user.is_authenticated and not feedback.name:
+            feedback.name = request.user.get_full_name() or request.user.username
+        if request.user.is_authenticated and not feedback.email:
+            feedback.email = request.user.email
+        feedback.save()
+        from django.contrib import messages
+        messages.success(request, "Thank you. Your feedback has been received.")
+        return redirect("contact")
+    return render(request, "WEBSITE/contact.html", {"form": form})
 
 
 def genre_detail(request, slug):
@@ -104,7 +132,7 @@ def genre_detail(request, slug):
 
 def movie_detail(request, slug):
     movie = get_object_or_404(
-        Movie.objects.prefetch_related("genres", "abasobanuzi", "countries", "episodes", "comments__user", "promo_shorts"),
+        Movie.objects.prefetch_related("genres", "abasobanuzi", "countries", "episodes", "comments__user"),
         slug=slug, is_published=True
     )
     episodes = movie.episodes.filter(is_published=True)
@@ -275,34 +303,6 @@ def delete_comment(request, comment_id):
     return redirect(f"{reverse('movie_detail', kwargs={'slug': slug})}#community")
 
 
-
-def shorts(request):
-    items = Short.objects.filter(status="published").select_related("movie", "uploaded_by")
-    return render(request, "WEBSITE/shorts.html", {"shorts": items})
-
-
-@login_required
-def upload_short(request):
-    from .forms import ShortForm
-    form = ShortForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
-        item = form.save(commit=False)
-        item.uploaded_by = request.user
-        item.status = "published" if (request.user.is_staff and request.user.username.casefold() == settings.CONTENT_ADMIN_USERNAME.casefold()) else "pending"
-        item.save()
-        if item.status == "pending":
-            from django.contrib import messages
-            messages.success(request, "Short uploaded. It will appear after admin approval.")
-        else:
-            from django.contrib import messages
-            messages.success(request, "Short published successfully.")
-        return redirect("shorts")
-    return render(request, "WEBSITE/short_upload.html", {"form": form, "admin_upload": False})
-
-
-def short_watch(request, pk):
-    item = get_object_or_404(Short.objects.select_related("movie"), pk=pk, status="published")
-    return render(request, "WEBSITE/short_watch.html", {"short": item})
 
 def normalize_video_url(url):
     """Return a player-safe representation for YouTube, Google Drive, or direct media URLs."""

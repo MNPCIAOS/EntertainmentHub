@@ -224,6 +224,41 @@ class Episode(models.Model):
         return f"{self.movie.title} — S{self.season_number:02d}E{self.episode_number:02d} — {self.title}"
 
 
+
+class Feedback(models.Model):
+    """Feedback submitted by visitors, including users who are not registered."""
+    CATEGORY_CHOICES = [
+        ("feedback", "General feedback"),
+        ("request", "Movie / series request"),
+        ("recommendation", "Movie / series recommendation"),
+        ("problem", "Report a problem"),
+        ("correction", "Content correction"),
+        ("partnership", "Partnership / business"),
+        ("other", "Other"),
+    ]
+    CONTACT_CHOICES = [
+        ("email", "Email"),
+        ("phone", "Phone call"),
+        ("whatsapp", "WhatsApp"),
+        ("none", "No reply needed"),
+    ]
+    name = models.CharField(max_length=120, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default="feedback")
+    subject = models.CharField(max_length=200, blank=True)
+    location = models.CharField(max_length=160, blank=True, help_text="City, country or area (optional).")
+    preferred_contact = models.CharField(max_length=20, choices=CONTACT_CHOICES, default="email")
+    message = models.TextField(max_length=3000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.subject or f"Feedback from {self.name or 'Anonymous'}"
+
+
 class MovieLike(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name="likes")
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="movie_likes")
@@ -253,26 +288,3 @@ class MovieComment(models.Model):
     def __str__(self):
         return f"Comment by {self.user.username} on {self.movie.title}"
 
-
-class Short(models.Model):
-    STATUS_CHOICES = [
-        ("pending", "Pending review"),
-        ("published", "Published"),
-        ("rejected", "Rejected"),
-    ]
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    video_file = models.FileField(upload_to="shorts/videos/", validators=video_validators())
-    thumbnail_image = models.ImageField(upload_to="shorts/thumbnails/", blank=True, validators=image_validators())
-    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="pending")
-    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.SET_NULL, related_name="promo_shorts")
-    uploaded_by = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="uploaded_shorts")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-        indexes = [models.Index(fields=["status", "-created_at"]) ]
-
-    def __str__(self):
-        return self.title

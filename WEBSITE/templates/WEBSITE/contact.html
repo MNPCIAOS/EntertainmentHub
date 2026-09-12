@@ -1,0 +1,74 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}Contact Us & Feedback — EntertainmentHub{% endblock %}
+{% block content %}
+<div class="container page-space contact-page">
+  <section class="contact-hero contact-hero-rich">
+    <div class="contact-hero-copy">
+      <p class="eyebrow" data-i18n="CONTACT">CONTACT</p>
+      <h1>Let's hear from you.</h1>
+      <p class="contact-lead">Have a movie request, a recommendation, a technical problem, or an idea that could make EntertainmentHub better? Send it to us. <strong>You do not need an account.</strong></p>
+      <div class="contact-hero-actions">
+        <a class="btn primary" href="#feedback-form">Send a message</a>
+        <a class="btn secondary" href="https://wa.me/250788821628" target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
+      </div>
+      <div class="contact-trust-row">
+        <span>✓ No registration required</span><span>✓ Requests welcome</span><span>✓ Suggestions welcome</span>
+      </div>
+    </div>
+    <div class="contact-orbit" aria-hidden="true"><div class="contact-orbit-card"><span>EH</span><strong>We listen.</strong><small>Your ideas help shape the next update.</small></div></div>
+  </section>
+
+  <section class="contact-info-grid" aria-label="Contact information">
+    <article class="contact-info-card"><div class="contact-icon">☎</div><div><span class="contact-label">Call us</span><a href="tel:+250788821628">+250 788 821 628</a><small>For urgent questions and support</small></div></article>
+    <article class="contact-info-card"><div class="contact-icon">◔</div><div><span class="contact-label">WhatsApp</span><a href="https://wa.me/250788821628" target="_blank" rel="noopener noreferrer">+250 788 821 628</a><small>Quick questions, requests & recommendations</small></div></article>
+    <article class="contact-info-card"><div class="contact-icon">✉</div><div><span class="contact-label">Email</span><a href="mailto:info@oshakurfilms.com">info@oshakurfilms.com</a><small>Longer messages and business enquiries</small></div></article>
+    <article class="contact-info-card"><div class="contact-icon">⌖</div><div><span class="contact-label">Location</span><strong>Kigali, Rwanda</strong><small>Serving viewers in Rwanda and beyond</small></div></article>
+  </section>
+
+  <section class="contact-main-grid">
+    <div class="feedback-card feedback-card-large" id="feedback-form">
+      <div class="section-head"><div><p class="eyebrow">GET IN TOUCH</p><h2>Send us a request</h2></div><span class="form-badge">Open to everyone</span></div>
+      <p class="form-intro">Use this form for almost anything related to the site. Want a particular movie? Recommend a title. Found a broken poster or video? Tell us. Have an idea for a new feature? We want to hear it.</p>
+      <form method="post" class="feedback-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="feedback-grid three-cols">
+          <div class="form-field"><label for="{{ form.name.id_for_label }}">{{ form.name.label }} <span>(optional)</span></label>{{ form.name }}{% if form.name.errors %}<small class="field-error">{{ form.name.errors|striptags }}</small>{% endif %}</div>
+          <div class="form-field"><label for="{{ form.email.id_for_label }}">{{ form.email.label }} <span>(optional)</span></label>{{ form.email }}{% if form.email.errors %}<small class="field-error">{{ form.email.errors|striptags }}</small>{% endif %}</div>
+          <div class="form-field"><label for="{{ form.phone.id_for_label }}">{{ form.phone.label }} <span>(optional)</span></label>{{ form.phone }}{% if form.phone.errors %}<small class="field-error">{{ form.phone.errors|striptags }}</small>{% endif %}</div>
+        </div>
+        <div class="feedback-grid three-cols">
+          <div class="form-field"><label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>{{ form.category }}{% if form.category.errors %}<small class="field-error">{{ form.category.errors|striptags }}</small>{% endif %}</div>
+          <div class="form-field"><label for="{{ form.subject.id_for_label }}">{{ form.subject.label }} <span>(optional)</span></label>{{ form.subject }}{% if form.subject.errors %}<small class="field-error">{{ form.subject.errors|striptags }}</small>{% endif %}</div>
+          <div class="form-field"><label for="{{ form.location.id_for_label }}">{{ form.location.label }} <span>(optional)</span></label>{{ form.location }}{% if form.location.errors %}<small class="field-error">{{ form.location.errors|striptags }}</small>{% endif %}</div>
+        </div>
+        <div class="form-field"><label for="{{ form.preferred_contact.id_for_label }}">{{ form.preferred_contact.label }}</label>{{ form.preferred_contact }}{% if form.preferred_contact.errors %}<small class="field-error">{{ form.preferred_contact.errors|striptags }}</small>{% endif %}</div>
+        <div class="form-field"><label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>{{ form.message }}{% if form.message.errors %}<small class="field-error">{{ form.message.errors|striptags }}</small>{% endif %}<small class="field-help">Please do not send passwords, payment details, or other sensitive information.</small></div>
+        <button class="btn primary contact-submit" type="submit">Send message <span>→</span></button>
+      </form>
+    </div>
+
+    <aside class="contact-side">
+      <div class="side-card highlight-card"><span class="side-kicker">MOVIE REQUESTS</span><h3>Can't find what you're looking for?</h3><p>Tell us the title, language, year, genre, or anything else you know. We can use your request to guide future content updates.</p><a href="#feedback-form">Request a title →</a></div>
+      <div class="side-card"><h3>What can you send us?</h3><ul class="contact-checklist"><li>Movie or series recommendations</li><li>Requests for missing titles</li><li>Playback or website problems</li><li>Poster, description or genre corrections</li><li>Design and feature suggestions</li><li>Partnership and business enquiries</li></ul></div>
+      <div class="side-card"><h3>Before you send</h3><p>Be as specific as possible. For a technical issue, mention the movie title and what happened. For a recommendation, include the title and why you think viewers would enjoy it.</p><div class="response-note">💡 Helpful details mean faster, better action.</div></div>
+    </aside>
+  </section>
+
+  <section class="contact-bottom-grid">
+    <article class="contact-bottom-card"><span class="big-number">01</span><h3>Tell us</h3><p>Share your feedback, request, recommendation or problem in your own words.</p></article>
+    <article class="contact-bottom-card"><span class="big-number">02</span><h3>We review</h3><p>Your message is sent to the site dashboard where it can be reviewed by the content team.</p></article>
+    <article class="contact-bottom-card"><span class="big-number">03</span><h3>We improve</h3><p>Useful ideas and content requests help us decide what to improve and add next.</p></article>
+  </section>
+
+  <section class="contact-faq">
+    <div><p class="eyebrow">QUICK ANSWERS</p><h2>Questions before contacting us?</h2></div>
+    <div class="faq-list">
+      <details><summary>Do I need to create an account?</summary><p>No. Anyone can use the contact and feedback form, whether registered or not.</p></details>
+      <details><summary>Can I request a movie?</summary><p>Yes. Choose “Movie / series request” and tell us the title and any useful details you know.</p></details>
+      <details><summary>Can I recommend a movie?</summary><p>Absolutely. Choose “Movie / series recommendation” and tell us why you recommend it.</p></details>
+      <details><summary>Can I report a broken video or poster?</summary><p>Yes. Choose “Report a problem” and include the movie title plus a short description of the problem.</p></details>
+    </div>
+  </section>
+</div>
+{% endblock %}

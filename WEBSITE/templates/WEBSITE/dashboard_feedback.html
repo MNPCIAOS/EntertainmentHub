@@ -1,0 +1,19 @@
+{% extends 'WEBSITE/dashboard_base.html' %}
+{% block title %}Visitor Feedback — FILMS{% endblock %}
+{% block dashboard_content %}
+<div class="dash-heading"><div><p class="eyebrow">COMMUNITY FEEDBACK</p><h1>Visitor feedback</h1><p>Read feedback from registered and unregistered visitors.</p></div></div>
+<section class="dash-panel">
+  <div class="feedback-admin-list">
+    {% for item in feedback %}
+    <article class="feedback-admin">
+      <div class="feedback-admin-head">
+        <div><strong>{{ item.subject|default:"General feedback" }}</strong><small>{{ item.created_at|date:"M d, Y H:i" }}</small></div>
+        <a class="danger-link" href="{% url 'dashboard_feedback_delete' item.pk %}">Delete</a>
+      </div>
+      <p>{{ item.message }}</p>
+      <div class="feedback-meta">From: {{ item.name|default:"Anonymous" }}{% if item.email %} · {{ item.email }}{% endif %}{% if item.phone %} · {{ item.phone }}{% endif %}{% if item.location %} · {{ item.location }}{% endif %}<br>{{ item.get_category_display }} · Preferred reply: {{ item.get_preferred_contact_display }}</div>
+    </article>
+    {% empty %}<div class="empty">No feedback yet.</div>{% endfor %}
+  </div>
+</section>
+{% endblock %}

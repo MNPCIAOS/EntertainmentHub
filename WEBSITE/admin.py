@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Episode, Genre, Movie, MovieComment, MovieLike
+from .models import Episode, Genre, Movie, MovieComment, MovieLike, Feedback
 
 
 @admin.register(Genre)
@@ -49,4 +49,12 @@ class MovieLikeAdmin(admin.ModelAdmin):
     list_display = ("movie", "user", "created_at")
     list_filter = ("created_at",)
     search_fields = ("movie__title", "user__username")
+    readonly_fields = ("created_at",)
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ("subject", "category", "name", "email", "phone", "preferred_contact", "created_at")
+    list_filter = ("category", "preferred_contact", "created_at")
+    search_fields = ("subject", "name", "email", "phone", "location", "message")
     readonly_fields = ("created_at",)

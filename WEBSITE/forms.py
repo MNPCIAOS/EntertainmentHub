@@ -1,7 +1,7 @@
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
-from .models import Abasobanuzi, Country, Genre, Movie, Episode, MovieComment, Short
+from .models import Abasobanuzi, Country, Genre, Movie, Episode, MovieComment, Feedback
 
 
 class SignupForm(UserCreationForm):
@@ -101,10 +101,27 @@ class AbasobanuziForm(forms.ModelForm):
 
 
 
-class ShortForm(forms.ModelForm):
+class FeedbackForm(forms.ModelForm):
     class Meta:
-        model = Short
-        fields = ["title", "description", "movie", "video_file", "thumbnail_image"]
+        model = Feedback
+        fields = ["name", "email", "phone", "category", "subject", "location", "preferred_contact", "message"]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
+            "name": forms.TextInput(attrs={"placeholder": "Your name (optional)", "autocomplete": "name"}),
+            "email": forms.EmailInput(attrs={"placeholder": "you@example.com (optional)", "autocomplete": "email"}),
+            "phone": forms.TextInput(attrs={"placeholder": "+250 7xx xxx xxx (optional)", "autocomplete": "tel"}),
+            "category": forms.Select(),
+            "subject": forms.TextInput(attrs={"placeholder": "Give your message a short title"}),
+            "location": forms.TextInput(attrs={"placeholder": "City / country (optional)"}),
+            "preferred_contact": forms.Select(),
+            "message": forms.Textarea(attrs={"rows": 8, "placeholder": "Tell us what you need. You can request a movie, recommend a title, report a problem, suggest a feature, or simply share your experience..."}),
+        }
+        labels = {
+            "name": "Your name",
+            "email": "Email address",
+            "phone": "Phone / WhatsApp",
+            "category": "What can we help with?",
+            "subject": "Subject",
+            "location": "Your location",
+            "preferred_contact": "Preferred reply",
+            "message": "Your message",
         }
