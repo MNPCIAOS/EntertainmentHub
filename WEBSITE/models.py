@@ -137,6 +137,10 @@ class Movie(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(10)])
     featured = models.BooleanField(default=False)
     is_published = models.BooleanField(default=True)
+
+    # Social-style engagement counters. These count actions, not unique users.
+    view_count = models.PositiveBigIntegerField(default=0)
+    download_count = models.PositiveBigIntegerField(default=0)
     genres = models.ManyToManyField(Genre, related_name="movies", blank=True)
     abasobanuzi = models.ManyToManyField(Abasobanuzi, related_name="movies", blank=True)
     countries = models.ManyToManyField(Country, related_name="movies", blank=True, help_text="Production, filming, or cast-origin countries.")

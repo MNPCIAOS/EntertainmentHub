@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from .forms import SignupForm, CommentForm, FeedbackForm
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Count, F, Q
 from django.http import FileResponse, Http404, HttpResponseBadRequest, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import get_valid_filename
@@ -28,7 +28,7 @@ def home(request):
     featured_only = request.GET.get("featured", "").strip()
     sort = request.GET.get("sort", "newest").strip()
 
-    movies = Movie.objects.filter(is_published=True).prefetch_related("genres", "abasobanuzi", "countries")
+    movies = Movie.objects.filter(is_published=True).annotate(like_count=Count("likes", distinct=True)).prefetch_related("genres", "abasobanuzi", "countries")
     if q:
         movies = movies.filter(
             Q(title__icontains=q)
@@ -76,7 +76,7 @@ def home(request):
     paginator = Paginator(movies.distinct(), 24)
     page = paginator.get_page(request.GET.get("page"))
 
-    featured = Movie.objects.filter(is_published=True, featured=True).prefetch_related("genres", "abasobanuzi", "countries")[:6]
+    featured = Movie.objects.filter(is_published=True, featured=True).annotate(like_count=Count("likes", distinct=True)).prefetch_related("genres", "abasobanuzi", "countries")[:6]
     genres = Genre.objects.all()
     narrators = Abasobanuzi.objects.all()
     countries = Country.objects.all()
@@ -90,7 +90,7 @@ def home(request):
         genre_movies = list(
             Movie.objects.filter(
                 is_published=True, genres=genre
-            ).prefetch_related("genres", "abasobanuzi", "countries").order_by("-created_at")[:8]
+            ).annotate(like_count=Count("likes", distinct=True)).prefetch_related("genres", "abasobanuzi", "countries").order_by("-created_at")[:8]
         )
         if genre_movies:
             genre_sections.append({"genre": genre, "movies": genre_movies})
@@ -124,7 +124,7 @@ def contact(request):
 
 def genre_detail(request, slug):
     genre = get_object_or_404(Genre, slug=slug)
-    movies = Movie.objects.filter(is_published=True, genres=genre).prefetch_related("genres")
+    movies = Movie.objects.filter(is_published=True, genres=genre).annotate(like_count=Count("likes", distinct=True)).prefetch_related("genres")
     paginator = Paginator(movies.distinct(), 24)
     page = paginator.get_page(request.GET.get("page"))
     return render(request, "WEBSITE/genre.html", {"genre": genre, "page": page})
@@ -135,6 +135,11 @@ def movie_detail(request, slug):
         Movie.objects.prefetch_related("genres", "abasobanuzi", "countries", "episodes", "comments__user"),
         slug=slug, is_published=True
     )
+
+    # A movie view is counted whenever someone opens the movie detail page.
+    # The database update is atomic so simultaneous visitors cannot overwrite each other.
+    Movie.objects.filter(pk=movie.pk).update(view_count=F("view_count") + 1)
+    movie.view_count += 1
     episodes = movie.episodes.filter(is_published=True)
     seasons = {}
     for episode in episodes:
@@ -252,17 +257,27 @@ def stream_trailer(request, slug):
 
 
 def download(request, slug, episode_id=None):
-    """Download a locally uploaded authorized media file. Cloud URLs remain provider links."""
+    """Count a download click, then serve a local file or redirect to its authorized cloud URL."""
     movie = get_object_or_404(Movie, slug=slug, is_published=True)
     media = get_object_or_404(Episode, pk=episode_id, movie=movie, is_published=True) if episode_id else movie
+    download_src = media.download_src
+    if not download_src:
+        return HttpResponseBadRequest("No download file or URL is configured.")
+
+    # The poster counter represents downloads for the whole movie/series, including episodes.
+    Movie.objects.filter(pk=movie.pk).update(download_count=F("download_count") + 1)
+    movie.download_count += 1
+
     local_file = getattr(media, "download_file", None)
-    if not local_file:
-        return HttpResponseBadRequest("No local download file is configured.")
-    try:
-        filename = get_valid_filename(local_file.name.rsplit("/", 1)[-1]) or "download"
-        return FileResponse(local_file.open("rb"), as_attachment=True, filename=filename)
-    except (FileNotFoundError, ValueError):
-        raise Http404("The download file is missing.")
+    if local_file:
+        try:
+            filename = get_valid_filename(local_file.name.rsplit("/", 1)[-1]) or "download"
+            return FileResponse(local_file.open("rb"), as_attachment=True, filename=filename)
+        except (FileNotFoundError, ValueError):
+            raise Http404("The download file is missing.")
+
+    # External/cloud download links are routed through Django so the click is counted.
+    return redirect(download_src)
 
 
 

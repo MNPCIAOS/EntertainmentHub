@@ -17,12 +17,13 @@ class EpisodeInline(admin.TabularInline):
 
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
-    list_display = ("title", "content_type", "is_published", "featured", "created_at")
+    list_display = ("title", "content_type", "view_count", "download_count", "is_published", "featured", "created_at")
     list_filter = ("content_type", "is_published", "featured", "genres")
     search_fields = ("title", "description")
     prepopulated_fields = {"slug": ("title",)}
     filter_horizontal = ("genres",)
     inlines = [EpisodeInline]
+    readonly_fields = ("view_count", "download_count")
 
 
 @admin.register(Episode)
