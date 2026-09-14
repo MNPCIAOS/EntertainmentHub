@@ -125,3 +125,20 @@ class FeedbackForm(forms.ModelForm):
             "preferred_contact": "Preferred reply",
             "message": "Your message",
         }
+
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ["message", "is_active"]
+        widgets = {
+            "message": forms.Textarea(attrs={
+                "rows": 4,
+                "maxlength": 500,
+                "placeholder": "Write the announcement visitors should see..."
+            }),
+        }
+        labels = {
+            "message": "Announcement",
+            "is_active": "Show this announcement",
+        }

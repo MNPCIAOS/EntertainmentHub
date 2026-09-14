@@ -57,6 +57,22 @@
   </div>
 </div>
 
+{% if site_announcements %}
+<div class="announcement-bar" role="region" aria-label="Announcements">
+  <div class="announcement-label">📢 <span>Announcements</span></div>
+  <div class="announcement-marquee">
+    <div class="announcement-track">
+      {% for announcement in site_announcements %}
+        <span class="announcement-item">{{ announcement.message }}</span>
+      {% endfor %}
+      {% for announcement in site_announcements %}
+        <span class="announcement-item" aria-hidden="true">{{ announcement.message }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <main>{% block content %}{% endblock %}</main>
 
 <footer class="footer">

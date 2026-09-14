@@ -1,0 +1,19 @@
+{% extends 'WEBSITE/dashboard_base.html' %}
+{% block title %}{{ heading }} — Admin Dashboard{% endblock %}
+{% block dashboard_content %}
+<div class="dash-heading"><div><p class="eyebrow">SITE COMMUNICATION</p><h1>{{ heading }}</h1><p class="dash-muted">This message will appear in the public announcement marquee when it is active.</p></div></div>
+<div class="dash-panel form-panel">
+<form method="post" class="dashboard-form">{% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for field in form %}
+    <div class="form-field">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+    </div>
+  {% endfor %}
+  <div class="actions"><button class="btn dash-primary" type="submit">{{ submit_text }}</button><a class="btn dash-secondary" href="{% url 'dashboard_announcements' %}">Cancel</a></div>
+</form>
+</div>
+{% endblock %}

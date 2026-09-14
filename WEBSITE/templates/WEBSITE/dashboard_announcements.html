@@ -1,0 +1,25 @@
+{% extends 'WEBSITE/dashboard_base.html' %}
+{% block title %}Announcements — Admin Dashboard{% endblock %}
+{% block dashboard_content %}
+<div class="dash-heading">
+  <div><p class="eyebrow">SITE COMMUNICATION</p><h1>Announcements</h1><p class="dash-muted">Write messages that appear in the scrolling announcement bar across the public website.</p></div>
+  <a class="btn dash-primary" href="{% url 'dashboard_announcement_create' %}">＋ New announcement</a>
+</div>
+<div class="announcement-admin-list">
+{% for announcement in announcements %}
+  <article class="announcement-admin-card">
+    <div>
+      <span class="announcement-status {% if announcement.is_active %}active{% endif %}">{% if announcement.is_active %}LIVE{% else %}HIDDEN{% endif %}</span>
+      <p>{{ announcement.message }}</p>
+      <small>Created {{ announcement.created_at|date:"M d, Y H:i" }}</small>
+    </div>
+    <div class="dash-row-actions">
+      <a class="btn dash-secondary" href="{% url 'dashboard_announcement_edit' announcement.pk %}">Edit</a>
+      <a class="btn danger" href="{% url 'dashboard_announcement_delete' announcement.pk %}">Delete</a>
+    </div>
+  </article>
+{% empty %}
+  <div class="dash-panel"><p>No announcements yet. Create one and it will appear on every public page.</p></div>
+{% endfor %}
+</div>
+{% endblock %}

@@ -85,6 +85,8 @@ def home(request):
 
     # Keep the existing library/filter view, and additionally group the published
     # library into genre rows for the homepage.
+    latest_movies = list(Movie.objects.filter(is_published=True).annotate(like_count=Count("likes", distinct=True)).prefetch_related("genres", "abasobanuzi", "countries").order_by("-created_at")[:20])
+
     genre_sections = []
     for genre in genres:
         genre_movies = list(
@@ -99,7 +101,7 @@ def home(request):
     filter_params.pop("page", None)
 
     return render(request, "WEBSITE/home.html", {
-        "page": page, "featured": featured, "genres": genres, "narrators": narrators, "countries": countries, "years": years,
+        "page": page, "latest_movies": latest_movies, "featured": featured, "genres": genres, "narrators": narrators, "countries": countries, "years": years,
         "q": q, "active_genre": genre_slug, "active_year": year, "active_narrator": narrator_slug,
         "active_type": content_type, "active_country": country_slug, "active_country_name": selected_country.name if selected_country else "", "active_rating": min_rating,
         "active_duration": max_duration, "active_featured": featured_only, "active_sort": sort,

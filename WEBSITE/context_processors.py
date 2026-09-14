@@ -1,5 +1,5 @@
 from django.conf import settings
-from .models import Abasobanuzi, Country, Genre
+from .models import Abasobanuzi, Announcement, Country, Genre
 
 
 def navigation(request):
@@ -8,9 +8,11 @@ def navigation(request):
         and request.user.username == settings.CONTENT_ADMIN_USERNAME
         and request.user.is_staff
     )
+    announcements = Announcement.objects.filter(is_active=True)[:10]
     return {
         "nav_genres": Genre.objects.all(),
         "nav_narrators": Abasobanuzi.objects.all(),
         "nav_countries": Country.objects.all(),
         "is_content_admin": is_content_admin,
+        "site_announcements": announcements,
     }

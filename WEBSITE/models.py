@@ -292,3 +292,17 @@ class MovieComment(models.Model):
     def __str__(self):
         return f"Comment by {self.user.username} on {self.movie.title}"
 
+
+
+class Announcement(models.Model):
+    """Site-wide announcement displayed in the public marquee."""
+    message = models.CharField(max_length=500)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.message[:80]

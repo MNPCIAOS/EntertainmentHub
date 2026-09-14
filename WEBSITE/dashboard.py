@@ -3,8 +3,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import EpisodeForm, GenreForm, MovieForm
-from .models import Abasobanuzi, Country, Episode, Genre, Movie, MovieComment, Feedback
+from .forms import AnnouncementForm, EpisodeForm, GenreForm, MovieForm
+from .models import Abasobanuzi, Announcement, Country, Episode, Genre, Movie, MovieComment, Feedback
 
 
 def is_content_admin(user):
@@ -219,4 +219,47 @@ def feedback_delete(request, pk):
         return redirect("dashboard_feedback")
     return render(request, "WEBSITE/dashboard_confirm.html", {
         "object": item, "kind": "feedback", "cancel_url": "dashboard_feedback"
+    })
+
+
+@admin_required
+def announcement_list(request):
+    announcements = Announcement.objects.all()
+    return render(request, "WEBSITE/dashboard_announcements.html", {"announcements": announcements})
+
+
+@admin_required
+def announcement_create(request):
+    form = AnnouncementForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        announcement = form.save()
+        messages.success(request, "Announcement saved successfully.")
+        return redirect("dashboard_announcements")
+    return render(request, "WEBSITE/dashboard_announcement_form.html", {
+        "form": form, "heading": "New Announcement", "submit_text": "Publish Announcement"
+    })
+
+
+@admin_required
+def announcement_edit(request, pk):
+    announcement = get_object_or_404(Announcement, pk=pk)
+    form = AnnouncementForm(request.POST or None, instance=announcement)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Announcement updated successfully.")
+        return redirect("dashboard_announcements")
+    return render(request, "WEBSITE/dashboard_announcement_form.html", {
+        "form": form, "heading": "Edit Announcement", "submit_text": "Update Announcement"
+    })
+
+
+@admin_required
+def announcement_delete(request, pk):
+    announcement = get_object_or_404(Announcement, pk=pk)
+    if request.method == "POST":
+        announcement.delete()
+        messages.success(request, "Announcement deleted.")
+        return redirect("dashboard_announcements")
+    return render(request, "WEBSITE/dashboard_confirm.html", {
+        "object": announcement, "kind": "announcement", "cancel_url": "dashboard_announcements"
     })
