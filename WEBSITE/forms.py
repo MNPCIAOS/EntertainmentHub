@@ -1,7 +1,7 @@
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
-from .models import Abasobanuzi, Country, Genre, Movie, Episode, MovieComment, Feedback
+from .models import Abasobanuzi, Country, Genre, Movie, Episode, MovieComment, Feedback, Announcement
 
 
 class SignupForm(UserCreationForm):
