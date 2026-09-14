@@ -13,7 +13,6 @@
     </div>
     <a class="hero-poster" href="{% url 'movie_detail' featured.0.slug %}" aria-label="{{ featured.0.title }}">
       {% if featured.0.poster_src %}<img src="{{ featured.0.poster_src }}" data-poster-fallback="{{ featured.0.poster_fallback_src }}" alt="{{ featured.0.title }} poster" onerror="if(this.dataset.posterFallback && this.src !== this.dataset.posterFallback){this.src=this.dataset.posterFallback;}else{this.style.display='none';}">{% else %}<div class="poster-placeholder">{{ featured.0.title|first }}</div>{% endif %}
-      <span class="poster-stats" aria-label="{{ featured.0.view_count }} views, {{ featured.0.download_count }} downloads, {{ featured.0.like_count }} likes"><span>👁 {{ featured.0.view_count }}</span><span>⇩ {{ featured.0.download_count }}</span><span>♥ {{ featured.0.like_count }}</span></span>
     </a>
   </div>
 </section>

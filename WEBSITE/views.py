@@ -90,7 +90,7 @@ def home(request):
         genre_movies = list(
             Movie.objects.filter(
                 is_published=True, genres=genre
-            ).annotate(like_count=Count("likes", distinct=True)).prefetch_related("genres", "abasobanuzi", "countries").order_by("-created_at")[:8]
+            ).annotate(like_count=Count("likes", distinct=True)).prefetch_related("genres", "abasobanuzi", "countries").order_by("-created_at")[:20]
         )
         if genre_movies:
             genre_sections.append({"genre": genre, "movies": genre_movies})

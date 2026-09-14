@@ -1,3 +1,49 @@
 {% extends 'WEBSITE/base.html' %}
 {% block title %}{{ genre.name }} — FILMS{% endblock %}
-{% block content %}<div class="container page-space"><div class="section-head"><div><p class="eyebrow">GENRE</p><h1>{{ genre.name }}</h1></div></div><div class="movie-grid">{% for movie in page %}<article class="card"><a href="{{ movie.get_absolute_url }}" class="poster">{% if movie.poster_src %}<img src="{{ movie.poster_src }}" alt="{{ movie.title }}" loading="lazy">{% else %}<div class="poster-placeholder">{{ movie.title|first }}</div>{% endif %}<span class="poster-stats" aria-label="{{ movie.view_count }} views, {{ movie.download_count }} downloads, {{ movie.like_count }} likes"><span>👁 {{ movie.view_count }}</span><span>⇩ {{ movie.download_count }}</span><span>♥ {{ movie.like_count }}</span></span></a><div class="card-body"><h3><a href="{{ movie.get_absolute_url }}">{{ movie.title }}</a></h3><div class="meta">{{ movie.release_year|default:"" }}{% if movie.rating %} · ★ {{ movie.rating }}{% endif %}</div></div></article>{% empty %}<div class="empty">No published titles in this genre.</div>{% endfor %}</div></div>{% endblock %}
+{% block content %}
+<div class="container page-space">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">GENRE</p>
+      <h1>{{ genre.name }}</h1>
+      <p class="genre-page-count">{{ page.paginator.count }} movies</p>
+    </div>
+  </div>
+
+  <div class="movie-grid">
+    {% for movie in page %}
+    <article class="card">
+      <a href="{{ movie.get_absolute_url }}" class="poster">
+        {% if movie.poster_src %}
+          <img src="{{ movie.poster_src }}" data-poster-fallback="{{ movie.poster_fallback_src }}" alt="{{ movie.title }}" loading="lazy"
+               onerror="if(this.dataset.posterFallback && this.src !== this.dataset.posterFallback){this.src=this.dataset.posterFallback;}else{this.style.display='none';this.parentElement.classList.add('poster-failed');}">
+        {% else %}
+          <div class="poster-placeholder">{{ movie.title|first }}</div>
+        {% endif %}
+        <span class="poster-stats" aria-label="{{ movie.view_count }} views, {{ movie.download_count }} downloads, {{ movie.like_count }} likes">
+          <span>👁 {{ movie.view_count }}</span><span>⇩ {{ movie.download_count }}</span><span>♥ {{ movie.like_count }}</span>
+        </span>
+      </a>
+      <div class="card-body">
+        <h3><a href="{{ movie.get_absolute_url }}">{{ movie.title }}</a></h3>
+        <div class="meta">{{ movie.release_year|default:"" }}{% if movie.rating %} · ★ {{ movie.rating }}{% endif %}</div>
+      </div>
+    </article>
+    {% empty %}
+      <div class="empty">No published titles in this genre.</div>
+    {% endfor %}
+  </div>
+
+  {% if page.paginator.num_pages > 1 %}
+  <div class="pagination">
+    {% if page.has_previous %}
+      <a href="?page={{ page.previous_page_number }}" aria-label="Previous page">←</a>
+    {% endif %}
+    <span>Page {{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}
+      <a href="?page={{ page.next_page_number }}" aria-label="Next page">→</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
