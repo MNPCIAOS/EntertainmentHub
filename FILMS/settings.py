@@ -200,7 +200,6 @@ CONTENT_ADMIN_USERNAME = os.environ.get(
 )
 
 LOGIN_URL = "/account/login/"
-
 LOGIN_REDIRECT_URL = "/"
 
 LOGOUT_REDIRECT_URL = "/"
@@ -211,9 +210,7 @@ LOGOUT_REDIRECT_URL = "/"
 # ============================================================
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 DATA_UPLOAD_MAX_MEMORY_SIZE = None
-
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 
@@ -228,13 +225,9 @@ if not DEBUG:
     )
 
     SESSION_COOKIE_SECURE = True
-
     CSRF_COOKIE_SECURE = True
-
     SECURE_CONTENT_TYPE_NOSNIFF = True
-
     SECURE_REFERRER_POLICY = "same-origin"
-
     SECURE_HSTS_SECONDS = int(
         os.environ.get(
             "SECURE_HSTS_SECONDS",
@@ -243,8 +236,22 @@ if not DEBUG:
     )
 
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-
     SECURE_HSTS_PRELOAD = False
-
     X_FRAME_OPTIONS = "SAMEORIGIN"
 
+
+
+# Premium / payment integrations
+PREMIUM_PRICE_RWF = os.environ.get("PREMIUM_PRICE_RWF", "1000")
+PREMIUM_DURATION_DAYS = int(os.environ.get("PREMIUM_DURATION_DAYS", "30"))
+MTN_MOMO_BASE_URL = os.environ.get("MTN_MOMO_BASE_URL", "https://sandbox.momodeveloper.mtn.com")
+MTN_MOMO_TARGET_ENVIRONMENT = os.environ.get("MTN_MOMO_TARGET_ENVIRONMENT", "sandbox")
+MTN_MOMO_SUBSCRIPTION_KEY = os.environ.get("MTN_MOMO_SUBSCRIPTION_KEY", "")
+MTN_MOMO_API_USER = os.environ.get("MTN_MOMO_API_USER", "")
+MTN_MOMO_API_KEY = os.environ.get("MTN_MOMO_API_KEY", "")
+MTN_MOMO_CALLBACK_URL = os.environ.get("MTN_MOMO_CALLBACK_URL", "")
+MTN_MOMO_CURRENCY = os.environ.get("MTN_MOMO_CURRENCY", "RWF")
+SMS_API_URL = os.environ.get("SMS_API_URL", "https://api.africastalking.com/version1/messaging")
+SMS_USERNAME = os.environ.get("SMS_USERNAME", "")
+SMS_API_KEY = os.environ.get("SMS_API_KEY", "")
+SMS_SENDER_ID = os.environ.get("SMS_SENDER_ID", "")

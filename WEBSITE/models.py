@@ -6,7 +6,11 @@ from django.utils.text import slugify
 from urllib.parse import parse_qs, urlparse
 
 
-VIDEO_EXTENSIONS = ["mp4", "webm", "ogg"]
+VIDEO_EXTENSIONS = [
+    "mp4", "webm", "ogg", "ogv", "avi", "mov", "m4v", "mkv", "mpeg",
+    "mpg", "mpe", "mp2", "ts", "mts", "m2ts", "3gp", "3g2", "flv",
+    "wmv", "asf", "vob", "f4v", "mxf", "divx", "hevc", "h264", "h265",
+]
 IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
 MAX_MEDIA_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB per uploaded video/download
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB per uploaded image
@@ -137,6 +141,7 @@ class Movie(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(10)])
     featured = models.BooleanField(default=False)
     is_published = models.BooleanField(default=True)
+    is_premium = models.BooleanField(default=False, help_text="Only active premium subscribers can watch this content.")
 
     # Social-style engagement counters. These count actions, not unique users.
     view_count = models.PositiveBigIntegerField(default=0)
@@ -306,3 +311,54 @@ class Announcement(models.Model):
 
     def __str__(self):
         return self.message[:80]
+
+class AccountProfile(models.Model):
+    ACCOUNT_CHOICES = [("free", "Free"), ("premium", "Premium")]
+    STATUS_CHOICES = [("free", "Free"), ("pending", "Pending approval"), ("active", "Active"), ("expired", "Expired"), ("rejected", "Rejected")]
+    user = models.OneToOneField("auth.User", on_delete=models.CASCADE, related_name="account_profile")
+    account_type = models.CharField(max_length=10, choices=ACCOUNT_CHOICES, default="free")
+    premium_status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="free")
+    payment_number = models.CharField(max_length=20, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    subscription_expires_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def premium_active(self):
+        from django.utils import timezone
+        if self.account_type == "premium" and self.premium_status == "active" and self.subscription_expires_at and self.subscription_expires_at > timezone.now():
+            return True
+        return False
+
+    def refresh_status(self):
+        from django.utils import timezone
+        if self.account_type == "premium" and self.subscription_expires_at and self.subscription_expires_at <= timezone.now():
+            self.premium_status = "expired"
+            self.save(update_fields=["premium_status", "updated_at"])
+        return self
+
+    def __str__(self):
+        return f"{self.user.username} — {self.account_type}"
+
+
+class PaymentTransaction(models.Model):
+    PROVIDER_CHOICES = [("mtn_momo", "MTN Mobile Money")]
+    STATUS_CHOICES = [("pending", "Pending"), ("successful", "Successful"), ("failed", "Failed"), ("cancelled", "Cancelled")]
+    reference_id = models.UUIDField(unique=True)
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="payment_transactions")
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES, default="mtn_momo")
+    phone_number = models.CharField(max_length=20)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=5, default="RWF")
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="pending")
+    external_id = models.CharField(max_length=160, blank=True)
+    provider_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "status", "-created_at"])]
+
+    def __str__(self):
+        return f"{self.user.username} — {self.amount} {self.currency} — {self.status}"

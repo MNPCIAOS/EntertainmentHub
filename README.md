@@ -94,3 +94,17 @@ The included `build.sh` installs dependencies, collects static files, and runs a
 Do not use the production `db.sqlite3` as the Render database. Published movies, users, comments, likes and other database records are stored in Supabase PostgreSQL when `DATABASE_URL` is configured. This prevents records from disappearing when the Render web service restarts or redeploys.
 
 Uploaded files under `MEDIA_ROOT` are still stored on the Render filesystem and therefore are not permanent production storage. Use permanent external object storage for uploaded posters/videos if you need those files to survive Render restarts/redeploys. External movie/video URLs stored in PostgreSQL remain as database records, but the external provider itself must keep those URLs/files available.
+
+## Premium subscriptions
+
+The project now supports Free and Premium account types, 30-day premium subscriptions, MTN MoMo RequestToPay transactions, administrator approval, expiry checks, credential/password updates, and optional payment confirmation SMS.
+
+For real MTN payments, create/subscribe to the required MoMo Collection product and configure the MTN environment variables in `.env`. MTN's official flow is asynchronous: the customer approves the request, and the application confirms the final transaction by callback or status polling.
+
+## Database backup
+
+The admin dashboard has a Backup database action. SQLite databases are copied directly. PostgreSQL backups use `pg_dump`, so production deployments need the PostgreSQL client tools available to the server.
+
+## Video formats
+
+The upload validator accepts common containers including MP4, WebM, OGG, AVI, MOV, MKV, MPEG/MPG, TS/MTS/M2TS, 3GP, FLV and WMV. A browser may still be unable to decode some codecs; for those files, use a browser-compatible H.264/AAC MP4 or configure server-side FFmpeg transcoding. Remote direct URLs are passed through, while supported Google Drive/Dropbox links are normalized.

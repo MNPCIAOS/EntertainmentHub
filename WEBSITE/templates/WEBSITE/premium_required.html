@@ -1,0 +1,3 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}Premium Required — EntertainmentHub{% endblock %}
+{% block content %}<div class="container page-space"><div class="auth-card"><p class="eyebrow">PREMIUM CONTENT</p><h1>Premium subscription required</h1><p><strong>{{ movie.title }}</strong> is available to active premium subscribers.</p>{% if profile.premium_status == 'pending' %}<p>Your payment has been received and is waiting for administrator approval.</p>{% else %}<p>Your premium subscription is not active. Subscribe for 30 days to continue.</p>{% endif %}<a class="btn primary" href="{% url 'start_premium_payment' %}">Premium subscription</a></div></div>{% endblock %}

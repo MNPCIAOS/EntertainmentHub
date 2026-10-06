@@ -1,19 +1,31 @@
 from urllib.parse import parse_qs, urlparse
 import mimetypes
 
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
+from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from .forms import SignupForm, CommentForm, FeedbackForm
+from django.contrib.auth.forms import PasswordChangeForm
+from .forms import SignupForm, CommentForm, FeedbackForm, CredentialsForm, AccountDetailsForm, PremiumPaymentForm
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
 from django.http import FileResponse, Http404, HttpResponseBadRequest, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import get_valid_filename
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from datetime import timedelta
+import json
+import uuid
+import base64
+import requests
 
-from .models import Abasobanuzi, Country, Episode, Genre, Movie, MovieComment, MovieLike, Feedback
+from .models import (
+    Abasobanuzi, Country, Episode, Genre, Movie, MovieComment, MovieLike,
+    Feedback, AccountProfile, PaymentTransaction,
+)
 
 
 def home(request):
@@ -169,6 +181,13 @@ def movie_detail(request, slug):
 
 def watch(request, slug, episode_id=None):
     movie = get_object_or_404(Movie, slug=slug, is_published=True)
+    if movie.is_premium:
+        if not request.user.is_authenticated:
+            return redirect(f"{reverse('login')}?next={request.get_full_path()}")
+        profile, _ = AccountProfile.objects.get_or_create(user=request.user)
+        profile.refresh_status()
+        if not profile.premium_active:
+            return render(request, "WEBSITE/premium_required.html", {"movie": movie, "profile": profile})
     media = get_object_or_404(Episode, pk=episode_id, movie=movie, is_published=True) if episode_id else movie
     video_url = media.video_src
     if not video_url:
@@ -366,11 +385,186 @@ def signup(request):
     form = SignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save()
+        AccountProfile.objects.create(
+            user=user,
+            account_type=form.cleaned_data.get("account_type", "free"),
+            premium_status="pending" if form.cleaned_data.get("account_type") == "premium" else "free",
+            payment_number=form.cleaned_data.get("payment_number", ""),
+        )
         login(request, user)
+        if form.cleaned_data.get("account_type") == "premium":
+            messages.info(request, "Your premium account was created. Complete the MTN Mobile Money payment to continue.")
+            return redirect("start_premium_payment")
         return redirect("home")
     return render(request, "WEBSITE/signup.html", {"form": form})
 
 
 @login_required
 def account_profile(request):
-    return render(request, "WEBSITE/profile.html")
+    profile, _ = AccountProfile.objects.get_or_create(user=request.user)
+    profile.refresh_status()
+    details_form = AccountDetailsForm(request.POST or None, instance=profile)
+    if request.method == "POST" and details_form.is_valid():
+        profile = details_form.save(commit=False)
+        if profile.account_type == "free":
+            profile.premium_status = "free"
+            profile.subscription_expires_at = None
+        profile.save()
+        messages.success(request, "Account details updated.")
+        return redirect("profile")
+    return render(request, "WEBSITE/profile.html", {"profile": profile, "details_form": details_form})
+
+
+@login_required
+def update_credentials(request):
+    form = CredentialsForm(request.POST or None, instance=request.user)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Username and email updated successfully.")
+        return redirect("profile")
+    return render(request, "WEBSITE/account_credentials.html", {"form": form})
+
+
+@login_required
+def update_password(request):
+    form = PasswordChangeForm(request.user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Password updated successfully.")
+        return redirect("profile")
+    return render(request, "WEBSITE/account_password.html", {"form": form})
+
+
+def _mtn_headers(token=None, reference_id=None):
+    headers = {
+        "Ocp-Apim-Subscription-Key": settings.MTN_MOMO_SUBSCRIPTION_KEY,
+        "X-Target-Environment": settings.MTN_MOMO_TARGET_ENVIRONMENT,
+        "Content-Type": "application/json",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    if reference_id:
+        headers["X-Reference-Id"] = str(reference_id)
+    return headers
+
+
+def _mtn_token():
+    if not settings.MTN_MOMO_API_USER or not settings.MTN_MOMO_API_KEY or not settings.MTN_MOMO_SUBSCRIPTION_KEY:
+        raise RuntimeError("MTN MoMo credentials are not configured.")
+    credentials = base64.b64encode(f"{settings.MTN_MOMO_API_USER}:{settings.MTN_MOMO_API_KEY}".encode()).decode()
+    headers = _mtn_headers()
+    headers.update({"Authorization": f"Basic {credentials}", "Content-Type": "application/x-www-form-urlencoded"})
+    response = requests.post(
+        f"{settings.MTN_MOMO_BASE_URL.rstrip('/')}/collection/token/",
+        headers=headers, data={}, timeout=30
+    )
+    response.raise_for_status()
+    return response.json()["access_token"]
+
+
+def _mtn_request_to_pay(transaction):
+    token = _mtn_token()
+    payload = {
+        "amount": str(transaction.amount),
+        "currency": transaction.currency,
+        "externalId": str(transaction.reference_id),
+        "payer": {"partyIdType": "MSISDN", "partyId": transaction.phone_number},
+        "payerMessage": "EntertainmentHub premium subscription",
+        "payeeNote": "30-day EntertainmentHub premium",
+    }
+    headers = _mtn_headers(token=token, reference_id=transaction.reference_id)
+    if settings.MTN_MOMO_CALLBACK_URL:
+        headers["X-Callback-Url"] = settings.MTN_MOMO_CALLBACK_URL
+    response = requests.post(
+        f"{settings.MTN_MOMO_BASE_URL.rstrip('/')}/collection/v1_0/requesttopay",
+        headers=headers, json=payload, timeout=30
+    )
+    if response.status_code not in (200, 201, 202):
+        raise RuntimeError(f"MTN request-to-pay failed ({response.status_code}): {response.text[:500]}")
+    return response
+
+
+def _mtn_get_status(reference_id):
+    token = _mtn_token()
+    response = requests.get(
+        f"{settings.MTN_MOMO_BASE_URL.rstrip('/')}/collection/v1_0/requesttopay/{reference_id}",
+        headers=_mtn_headers(token=token), timeout=30
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+@login_required
+def start_premium_payment(request):
+    profile, _ = AccountProfile.objects.get_or_create(user=request.user)
+    profile.refresh_status()
+    form = PremiumPaymentForm(request.POST or None, initial={"payment_number": profile.payment_number})
+    if request.method == "POST" and form.is_valid():
+        phone = form.cleaned_data["payment_number"].strip()
+        profile.account_type = "premium"
+        profile.payment_number = phone
+        profile.premium_status = "pending"
+        profile.save(update_fields=["account_type", "payment_number", "premium_status", "updated_at"])
+        transaction = PaymentTransaction.objects.create(
+            reference_id=uuid.uuid4(), user=request.user, phone_number=phone,
+            amount=settings.PREMIUM_PRICE_RWF, currency=settings.MTN_MOMO_CURRENCY, status="pending"
+        )
+        try:
+            _mtn_request_to_pay(transaction)
+            messages.success(request, "MTN Mobile Money payment request sent. Approve it on the phone number you entered.")
+            return redirect("payment_status", reference_id=transaction.reference_id)
+        except Exception as exc:
+            transaction.status = "failed"
+            transaction.provider_message = str(exc)
+            transaction.save(update_fields=["status", "provider_message", "updated_at"])
+            messages.error(request, f"The MTN payment request could not be sent: {exc}")
+    return render(request, "WEBSITE/premium_payment.html", {"form": form, "price": settings.PREMIUM_PRICE_RWF})
+
+
+@login_required
+def payment_status(request, reference_id):
+    transaction = get_object_or_404(PaymentTransaction, reference_id=reference_id, user=request.user)
+    if transaction.status == "pending":
+        try:
+            data = _mtn_get_status(transaction.reference_id)
+            status = str(data.get("status", "")).lower()
+            if status in {"successful", "failed" , "cancelled"}:
+                transaction.status = status
+                transaction.external_id = str(data.get("financialTransactionId", ""))
+                transaction.provider_message = str(data)[:4000]
+                transaction.save(update_fields=["status", "external_id", "provider_message", "updated_at"])
+                if status == "successful":
+                    profile, _ = AccountProfile.objects.get_or_create(user=request.user)
+                    profile.account_type = "premium"
+                    profile.premium_status = "pending"
+                    profile.payment_number = transaction.phone_number
+                    profile.save(update_fields=["account_type", "premium_status", "payment_number", "updated_at"])
+        except Exception as exc:
+            transaction.provider_message = str(exc)
+            transaction.save(update_fields=["provider_message", "updated_at"])
+    return render(request, "WEBSITE/premium_payment_status.html", {"transaction": transaction})
+
+
+@csrf_exempt
+def mtn_callback(request):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except (ValueError, UnicodeDecodeError):
+        return HttpResponseBadRequest("Invalid JSON")
+    reference = payload.get("externalId") or payload.get("referenceId") or payload.get("external_id")
+    if not reference:
+        return HttpResponseBadRequest("Missing payment reference")
+    try:
+        transaction = PaymentTransaction.objects.get(reference_id=reference)
+    except (PaymentTransaction.DoesNotExist, ValueError):
+        return HttpResponse(status=404)
+    status = str(payload.get("status", "")).lower()
+    if status in {"successful", "failed", "cancelled"}:
+        transaction.status = status
+        transaction.external_id = str(payload.get("financialTransactionId", payload.get("financialTransactionID", "")))
+        transaction.provider_message = json.dumps(payload)[:4000]
+        transaction.save(update_fields=["status", "external_id", "provider_message", "updated_at"])
+    return HttpResponse(status=202)

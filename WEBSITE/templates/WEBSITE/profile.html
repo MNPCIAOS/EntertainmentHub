@@ -1,3 +1,6 @@
 {% extends 'WEBSITE/base.html' %}
-{% block title %}Account — FILMS{% endblock %}
-{% block content %}<div class="container page-space"><div class="auth-card"><p class="eyebrow">ACCOUNT</p><h1>{{ user.username }}</h1><p>{{ user.email|default:"No email added." }}</p>{% if is_content_admin %}<p class="admin-note">You are the configured content administrator.</p><a class="btn primary" href="{% url 'dashboard' %}">Open Dashboard</a>{% endif %}</div></div>{% endblock %}
+{% block title %}Account — EntertainmentHub{% endblock %}
+{% block content %}<div class="container page-space"><div class="auth-card"><p class="eyebrow">ACCOUNT</p><h1>{{ user.username }}</h1><p>{{ user.email|default:"No email added." }}</p>
+{% if profile.account_type == 'premium' %}<p><strong>Premium status:</strong> {{ profile.premium_status|title }}</p>{% if profile.subscription_expires_at %}<p><strong>Subscription expires:</strong> {{ profile.subscription_expires_at }}</p>{% endif %}<a class="btn primary" href="{% url 'start_premium_payment' %}">Renew premium</a>{% else %}<p><strong>Account:</strong> Free</p><a class="btn primary" href="{% url 'start_premium_payment' %}">Upgrade to Premium</a>{% endif %}
+<hr><h2>Update account</h2><form method="post">{% csrf_token %}{{ details_form.as_p }}<button class="btn secondary">Save account details</button></form><p><a href="{% url 'update_credentials' %}">Update username/email</a> · <a href="{% url 'update_password' %}">Change password</a></p>
+{% if is_content_admin %}<p class="admin-note">You are the configured content administrator.</p><a class="btn primary" href="{% url 'dashboard' %}">Open Dashboard</a>{% endif %}</div></div>{% endblock %}

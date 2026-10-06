@@ -5,6 +5,10 @@
     menuButton.addEventListener('click', () => {
       const open = menu.classList.toggle('open');
       menuButton.setAttribute('aria-expanded', String(open));
+      if (!open) {
+        document.querySelectorAll('.genre-menu.open').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('[data-genre-button],[data-narrator-button]').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
+      }
     });
   }
 
@@ -149,10 +153,22 @@
   const filterPanel = document.querySelector('#filter-panel');
   if (filterToggle && filterPanel) {
     filterPanel.hidden = true;
+    let filterOpenedByUser = false;
     filterToggle.addEventListener('click', () => {
       filterPanel.hidden = !filterPanel.hidden;
+      filterOpenedByUser = !filterPanel.hidden;
       filterToggle.setAttribute('aria-pressed', String(!filterPanel.hidden));
     });
+    // Keep the filter compact while browsing: scrolling hides it again.
+    let lastScrollY = window.scrollY;
+    window.addEventListener('scroll', () => {
+      if (!filterPanel.hidden && filterOpenedByUser && Math.abs(window.scrollY - lastScrollY) > 8) {
+        filterPanel.hidden = true;
+        filterOpenedByUser = false;
+        filterToggle.setAttribute('aria-pressed', 'false');
+      }
+      lastScrollY = window.scrollY;
+    }, {passive:true});
   }
 
   // ------------------------------------------------------------

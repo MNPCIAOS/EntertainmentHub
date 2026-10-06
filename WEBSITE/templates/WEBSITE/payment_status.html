@@ -1,0 +1,3 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}Payment Status — EntertainmentHub{% endblock %}
+{% block content %}<div class="container page-space"><div class="auth-card"><p class="eyebrow">PAYMENT STATUS</p><h1>{{ transaction.status|title }}</h1>{% if transaction.status == 'pending' %}<p>Your MTN payment request is pending. Approve it on your phone, then refresh this page.</p>{% elif transaction.status == 'successful' %}<p>Payment received. Your premium account is now waiting for administrator approval.</p>{% else %}<p>{{ transaction.provider_message }}</p>{% endif %}<a class="btn secondary" href="{% url 'profile' %}">Back to account</a></div></div>{% endblock %}

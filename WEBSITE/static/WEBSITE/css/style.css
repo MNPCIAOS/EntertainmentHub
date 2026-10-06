@@ -254,3 +254,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 @media(prefers-reduced-motion:reduce){
   .announcement-track{animation:none}
 }
+
+/* Requested collapsible navigation/filter behavior */
+.genre-menu { display:none; }
+.genre-menu.open { display:grid; }
+@media(max-width:820px){
+  .nav-genres .genre-menu { display:none; }
+  .nav-genres .genre-menu.open { display:grid; }
+}

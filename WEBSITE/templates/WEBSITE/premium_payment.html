@@ -1,0 +1,3 @@
+{% extends 'WEBSITE/base.html' %}
+{% block title %}Premium Payment — EntertainmentHub{% endblock %}
+{% block content %}<div class="container page-space"><div class="auth-card"><p class="eyebrow">PREMIUM</p><h1>30-day premium</h1><p>Price: <strong>{{ price }} RWF</strong>. Enter the MTN Mobile Money number that will approve the payment.</p>{% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn primary" type="submit">Request MTN payment</button></form><p class="dash-muted">MTN will ask you to approve the payment on your phone. Premium is not activated until payment succeeds and the administrator approves the account.</p></div></div>{% endblock %}

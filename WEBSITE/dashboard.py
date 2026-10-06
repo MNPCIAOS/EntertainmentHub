@@ -2,9 +2,10 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import FileResponse, HttpResponse
 
 from .forms import AnnouncementForm, EpisodeForm, GenreForm, MovieForm
-from .models import Abasobanuzi, Announcement, Country, Episode, Genre, Movie, MovieComment, Feedback
+from .models import Abasobanuzi, Announcement, Country, Episode, Genre, Movie, MovieComment, Feedback, AccountProfile, PaymentTransaction
 
 
 def is_content_admin(user):
@@ -263,3 +264,81 @@ def announcement_delete(request, pk):
     return render(request, "WEBSITE/dashboard_confirm.html", {
         "object": announcement, "kind": "announcement", "cancel_url": "dashboard_announcements"
     })
+
+
+@admin_required
+def premium_accounts(request):
+    profiles = AccountProfile.objects.select_related("user").filter(account_type="premium").order_by("-updated_at")
+    return render(request, "WEBSITE/dashboard_premium_accounts.html", {"profiles": profiles})
+
+
+@admin_required
+def approve_premium(request, user_id):
+    if request.method != "POST":
+        return redirect("dashboard_premium_accounts")
+    from django.utils import timezone
+    from datetime import timedelta
+    profile = get_object_or_404(AccountProfile, user_id=user_id, account_type="premium")
+    paid = PaymentTransaction.objects.filter(user=profile.user, status="successful").first()
+    if not paid:
+        messages.error(request, f"{profile.user.username} cannot be approved until a successful MTN payment is recorded.")
+        return redirect("dashboard_premium_accounts")
+    profile.premium_status = "active"
+    profile.approved_at = timezone.now()
+    profile.subscription_expires_at = profile.approved_at + timedelta(days=settings.PREMIUM_DURATION_DAYS)
+    profile.save(update_fields=["premium_status", "approved_at", "subscription_expires_at", "updated_at"])
+    messages.success(request, f"{profile.user.username}'s premium account is active for {settings.PREMIUM_DURATION_DAYS} days.")
+    return redirect("dashboard_premium_accounts")
+
+
+@admin_required
+def reject_premium(request, user_id):
+    if request.method != "POST":
+        return redirect("dashboard_premium_accounts")
+    profile = get_object_or_404(AccountProfile, user_id=user_id, account_type="premium")
+    profile.premium_status = "rejected"
+    profile.save(update_fields=["premium_status", "updated_at"])
+    messages.success(request, f"{profile.user.username}'s premium request was rejected.")
+    return redirect("dashboard_premium_accounts")
+
+
+@admin_required
+def backup_database(request):
+    """Create a database backup without deleting/changing the live database."""
+    import os
+    import shutil
+    import subprocess
+    from pathlib import Path
+    from django.conf import settings as django_settings
+    backup_dir = Path(django_settings.MEDIA_ROOT) / "database_backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+    db = django_settings.DATABASES["default"]
+    engine = db.get("ENGINE", "")
+    if "sqlite" in engine:
+        source = Path(db["NAME"])
+        if not source.exists():
+            messages.error(request, "SQLite database file was not found.")
+            return redirect("dashboard")
+        target = backup_dir / f"entertainmenthub_{stamp}.sqlite3"
+        shutil.copy2(source, target)
+    elif "postgresql" in engine:
+        target = backup_dir / f"entertainmenthub_{stamp}.sql"
+        env = os.environ.copy()
+        cmd = ["pg_dump", "--dbname", db["NAME"], "--file", str(target)]
+        if db.get("HOST"):
+            cmd += ["--host", db["HOST"]]
+        if db.get("PORT"):
+            cmd += ["--port", str(db["PORT"])]
+        if db.get("USER"):
+            cmd += ["--username", db["USER"]]
+        try:
+            subprocess.run(cmd, env=env, check=True, capture_output=True, text=True, timeout=180)
+        except Exception as exc:
+            messages.error(request, f"PostgreSQL backup failed: {exc}")
+            return redirect("dashboard")
+    else:
+        messages.error(request, "Unsupported database engine for automatic backup.")
+        return redirect("dashboard")
+    messages.success(request, f"Database backup created: {target.name}")
+    return redirect("dashboard")

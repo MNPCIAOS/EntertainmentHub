@@ -1,0 +1,16 @@
+{% extends 'WEBSITE/dashboard_base.html' %}
+{% block title %}Premium Accounts — EntertainmentHub{% endblock %}
+{% block dashboard_content %}
+<div class="dash-heading"><div><p class="eyebrow">SUBSCRIPTIONS</p><h1>Premium accounts</h1><p>Approve only payments that have successfully completed.</p></div></div>
+<section class="dash-panel"><div class="movie-admin-list">
+{% for profile in profiles %}
+<div class="movie-admin-row"><div class="movie-admin-info"><strong>{{ profile.user.username }}</strong><span>{{ profile.user.email|default:"No email" }} · {{ profile.payment_number|default:"No number" }} · {{ profile.premium_status|title }}</span>{% if profile.subscription_expires_at %}<small>Expires {{ profile.subscription_expires_at }}</small>{% endif %}</div>
+<span class="status {% if profile.premium_status == 'active' %}published{% else %}draft{% endif %}">{{ profile.premium_status|title }}</span>
+{% if profile.premium_status == 'pending' %}
+<form method="post" action="{% url 'dashboard_approve_premium' profile.user_id %}">{% csrf_token %}<button class="dash-primary" type="submit">Approve</button></form>
+<form method="post" action="{% url 'dashboard_reject_premium' profile.user_id %}">{% csrf_token %}<button class="danger-btn" type="submit">Reject</button></form>
+{% endif %}
+</div>
+{% empty %}<div class="empty">No premium accounts yet.</div>{% endfor %}
+</div></section>
+{% endblock %}

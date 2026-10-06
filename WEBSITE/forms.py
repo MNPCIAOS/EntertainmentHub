@@ -1,15 +1,48 @@
 from django import forms
 from django.conf import settings
-from django.contrib.auth.forms import UserCreationForm
-from .models import Abasobanuzi, Country, Genre, Movie, Episode, MovieComment, Feedback, Announcement
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from .models import (
+    Abasobanuzi, Country, Genre, Movie, Episode, MovieComment, Feedback,
+    Announcement, AccountProfile,
+)
 
 
 class SignupForm(UserCreationForm):
+    account_type = forms.ChoiceField(choices=AccountProfile.ACCOUNT_CHOICES, widget=forms.RadioSelect, initial="free", label="Account type")
+    payment_number = forms.CharField(required=False, max_length=20, label="MTN Mobile Money number", widget=forms.TextInput(attrs={"placeholder": "e.g. 078xxxxxxx", "autocomplete": "tel"}))
+
+    class Meta(UserCreationForm.Meta):
+        fields = ("username", "email", "account_type", "payment_number")
+
     def clean_username(self):
         username = self.cleaned_data.get("username", "")
         if username.casefold() == settings.CONTENT_ADMIN_USERNAME.casefold():
             raise forms.ValidationError("That username is reserved for the content administrator.")
         return username
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("account_type") == "premium" and not cleaned.get("payment_number"):
+            self.add_error("payment_number", "Enter the Mobile Money number that will be used for payment.")
+        return cleaned
+
+
+class AccountDetailsForm(forms.ModelForm):
+    class Meta:
+        model = AccountProfile
+        fields = ["account_type", "payment_number"]
+        widgets = {"payment_number": forms.TextInput(attrs={"placeholder": "MTN Mobile Money number", "autocomplete": "tel"})}
+
+
+class CredentialsForm(UserChangeForm):
+    password = None
+    class Meta:
+        model = __import__("django.contrib.auth", fromlist=["get_user_model"]).get_user_model()
+        fields = ["username", "email"]
+
+
+class PremiumPaymentForm(forms.Form):
+    payment_number = forms.CharField(max_length=20, label="MTN Mobile Money number", widget=forms.TextInput(attrs={"placeholder": "078xxxxxxx", "autocomplete": "tel"}))
 
 
 class MovieForm(forms.ModelForm):
@@ -35,7 +68,7 @@ class MovieForm(forms.ModelForm):
         fields = [
             "title", "description", "abasobanuzi", "genres", "countries", "poster_url", "poster_image", "backdrop_url", "backdrop_image",
             "video_url", "video_file", "download_url", "download_file", "trailer_url", "trailer_file",
-            "content_type", "release_year", "duration_minutes", "rating", "featured", "is_published",
+            "content_type", "release_year", "duration_minutes", "rating", "featured", "is_premium", "is_published",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 6, "placeholder": "Umusobanuzi / description y’umukino..."}),
